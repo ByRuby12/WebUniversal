@@ -7,10 +7,10 @@ Plataforma web para crear, publicar y administrar sitios profesionales para nego
 - **Repositorio público:** [github.com/ByRuby12/WebUniversal](https://github.com/ByRuby12/WebUniversal)
 - **Web publicada:** [byruby12.github.io/WebUniversal](https://byruby12.github.io/WebUniversal/)
 - **Sitio cliente:** [Abrir web pública](https://byruby12.github.io/WebUniversal/)
-- **Acceso de administrador:** [Iniciar sesión](https://byruby12.github.io/WebUniversal/login)
-- **Panel de administración:** [Abrir panel](https://byruby12.github.io/WebUniversal/admin)
+- **Acceso de administrador:** [Iniciar sesión](https://byruby12.github.io/WebUniversal/#/login)
+- **Panel de administración:** [Abrir panel](https://byruby12.github.io/WebUniversal/#/admin)
 
-El panel `https://byruby12.github.io/WebUniversal/admin` requiere una sesión válida de Firebase. Si no hay una sesión iniciada, la aplicación redirige automáticamente a `https://byruby12.github.io/WebUniversal/login`.
+El panel `https://byruby12.github.io/WebUniversal/#/admin` requiere una sesión válida de Firebase. Si no hay una sesión iniciada, la aplicación redirige automáticamente a `https://byruby12.github.io/WebUniversal/#/login`.
 
 ## Qué incluye
 
@@ -54,8 +54,8 @@ Todas las rutas parten de `https://byruby12.github.io/WebUniversal/`:
 | --- | --- |
 | [https://byruby12.github.io/WebUniversal/](https://byruby12.github.io/WebUniversal/) | Sitio público del negocio seleccionado o del primer negocio publicado. |
 | `https://byruby12.github.io/WebUniversal/site/:businessId` | Sitio público de un negocio concreto. Sustituye `:businessId` por el identificador del negocio. |
-| [https://byruby12.github.io/WebUniversal/login](https://byruby12.github.io/WebUniversal/login) | Acceso de administradores. |
-| [https://byruby12.github.io/WebUniversal/admin](https://byruby12.github.io/WebUniversal/admin) | Panel protegido de administración. |
+| [https://byruby12.github.io/WebUniversal/#/login](https://byruby12.github.io/WebUniversal/#/login) | Acceso de administradores. |
+| [https://byruby12.github.io/WebUniversal/#/admin](https://byruby12.github.io/WebUniversal/#/admin) | Panel protegido de administración. |
 
 Las rutas desconocidas redirigen a `https://byruby12.github.io/WebUniversal/`.
 

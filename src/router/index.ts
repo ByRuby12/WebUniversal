@@ -1,11 +1,11 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 import { onAuthStateChanged } from 'firebase/auth'
 import { auth } from '../services/firebase'
 import LoginView from '../views/LoginView.vue'
 import AdminView from '../views/AdminView.vue'
 import PublicSiteView from '../views/PublicSiteView.vue'
 
-export const router = createRouter({ history: createWebHistory(import.meta.env.BASE_URL), routes: [
+export const router = createRouter({ history: createWebHashHistory(import.meta.env.BASE_URL), routes: [
   { path: '/', component: PublicSiteView, meta: { page: 'client' } },
   { path: '/site/:businessId', component: PublicSiteView, meta: { page: 'client' } },
   { path: '/login', component: LoginView, meta: { page: 'login' } },
