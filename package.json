@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
+    "postbuild": "node scripts/copy-spa-fallback.mjs",
     "lint": "vue-tsc -b --pretty false",
     "preview": "vite preview"
   },
