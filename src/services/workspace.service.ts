@@ -150,6 +150,22 @@ export async function saveWorkspace(settings: Settings, profile: Profile, busine
   ])
 }
 
+export async function saveWorkspaceSettings(settings: Settings, profile: Profile) {
+  const firebaseAuth = auth
+  const firestoreDb = db
+
+  if (!hasFirebaseConfig || !firebaseAuth || !firestoreDb) return
+
+  const currentUser = firebaseAuth.currentUser
+  if (!currentUser) return
+
+  await setDoc(doc(firestoreDb, 'users', currentUser.uid), stripUndefined({
+    settings: normalizeSettings(settings),
+    profile,
+    updatedAt: serverTimestamp(),
+  }), { merge: true })
+}
+
 export async function savePublicRequest(request: RequestItem) {
   if (!hasFirebaseConfig || !db) return false
 

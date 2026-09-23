@@ -10,9 +10,10 @@ watch(app.settings, () => { if (saveState.value !== 'saving') saveState.value = 
 async function save() {
   saveState.value = 'saving'
   try {
-    await app.persist()
+    await app.persistSettings()
     saveState.value = 'saved'
-  } catch {
+  } catch (error) {
+    console.error('No se pudieron guardar los ajustes', error)
     saveState.value = 'error'
   }
 }
