@@ -18,11 +18,16 @@ export function useAdminWorkspace() {
   function update(changes: Partial<Business>) { app.updateBusiness(changes); saved.value = false; if (app.settings.autosave) window.setTimeout(() => { saved.value = true }, 150) }
   function toggleModule(key: ModuleKey) { update({ modules: { ...current.value.modules, [key]: !current.value.modules[key] } }) }
   function selectBusiness(id: string) { app.setSelected(id); saved.value = false }
-  function saveCurrentSelection() {
+  async function saveCurrentSelection() {
     if (!current.value) return
     app.settings.currentBusinessId = current.value.id
-    void app.persist()
-    saved.value = true
+    try {
+      await app.persist()
+      saved.value = true
+    } catch (error) {
+      console.error('No se pudo guardar el negocio activo', error)
+      saved.value = false
+    }
   }
   function applyBusiness(id: string) {
     app.setSelected(id)

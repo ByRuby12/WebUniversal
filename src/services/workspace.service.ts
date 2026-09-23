@@ -76,10 +76,17 @@ export async function loadWorkspace() {
       getDocs(collection(firestoreDb, 'users', currentUser.uid, 'businessMetrics')),
       getDoc(doc(firestoreDb, 'users', currentUser.uid, 'stats', 'summary')),
     ])
+    let publicRequests: RequestItem[] = []
+    try {
+      const publicRequestsSnapshot = await getDocs(query(collection(firestoreDb, 'publicRequests'), where('ownerId', '==', currentUser.uid)))
+      publicRequests = publicRequestsSnapshot.docs.map((item) => item.data() as RequestItem)
+    } catch (error) {
+      console.warn('loadWorkspace: no se pudieron leer solicitudes públicas', error)
+    }
 
     const data = userSnapshot.data() ?? {}
     const requestMap = new Map<string, RequestItem>()
-    requestsSnapshot.docs.forEach((item) => requestMap.set(String(item.id), item.data() as RequestItem))
+    ;[...publicRequests, ...requestsSnapshot.docs.map((item) => item.data() as RequestItem)].forEach((item) => requestMap.set(String(item.id), item))
     const metrics = Object.fromEntries(metricsSnapshot.docs.map((item) => [item.id, item.data() as BusinessMetric]))
 
     const workspace = {
@@ -133,9 +140,7 @@ export async function saveWorkspace(settings: Settings, profile: Profile, busine
         published: business.published,
         updatedAt: new Date().toISOString(),
       }), { merge: true }),
-      business.published
-        ? setDoc(doc(firestoreDb, 'publicBusinesses', business.id), stripUndefined(publicBusinessData(business, normalizedSettings, currentUser.uid)), { merge: true })
-        : deleteDoc(doc(firestoreDb, 'publicBusinesses', business.id)),
+      Promise.resolve(),
     ]),
     ...requests.map((request) => setDoc(doc(firestoreDb, 'users', currentUser.uid, 'requests', String(request.id)), stripUndefined(request), { merge: true })),
     setDoc(doc(firestoreDb, 'users', currentUser.uid, 'stats', 'summary'), stripUndefined({
@@ -147,9 +152,11 @@ export async function saveWorkspace(settings: Settings, profile: Profile, busine
     }), { merge: true }),
     ...Object.entries(businessMetrics).map(([businessId, metric]) => setDoc(doc(firestoreDb, 'users', currentUser.uid, 'businessMetrics', businessId), stripUndefined({ ...metric, updatedAt: new Date().toISOString() }), { merge: true })),
   ])
+
+  await syncPublishedBusinesses(normalizedSettings, businesses, currentUser.uid)
 }
 
-export async function saveWorkspaceSettings(settings: Settings, profile: Profile, businesses: Business[]) {
+export async function saveWorkspaceSettings(settings: Settings, profile: Profile) {
   const firebaseAuth = auth
   const firestoreDb = db
 
@@ -164,11 +171,18 @@ export async function saveWorkspaceSettings(settings: Settings, profile: Profile
     updatedAt: serverTimestamp(),
   }), { merge: true })
 
-  await Promise.all(businesses.filter((business) => business.published).map((business) => setDoc(
-    doc(firestoreDb, 'publicBusinesses', business.id),
-    stripUndefined(publicBusinessData(business, settings, currentUser.uid)),
-    { merge: true },
-  )))
+}
+
+async function syncPublishedBusinesses(settings: Settings, businesses: Business[], ownerId: string) {
+  const firestoreDb = db
+  if (!firestoreDb) return
+  try {
+    await Promise.all(businesses.map((business) => business.published
+      ? setDoc(doc(firestoreDb, 'publicBusinesses', business.id), stripUndefined(publicBusinessData(business, settings, ownerId)), { merge: true })
+      : deleteDoc(doc(firestoreDb, 'publicBusinesses', business.id))))
+  } catch (error) {
+    console.error('syncPublishedBusinesses: no se pudo actualizar la copia pública', error)
+  }
 }
 
 export async function savePublicRequest(request: RequestItem) {
@@ -180,10 +194,7 @@ export async function savePublicRequest(request: RequestItem) {
     if (!publicBusiness.exists() || !publicBusiness.data()?.published || typeof ownerId !== 'string') return false
 
     const requestData = stripUndefined({ ...request, ownerId })
-    await Promise.all([
-      setDoc(doc(db, 'publicRequests', String(request.id)), requestData, { merge: true }),
-      setDoc(doc(db, 'users', ownerId, 'requests', String(request.id)), requestData, { merge: true }),
-    ])
+    await setDoc(doc(db, 'publicRequests', String(request.id)), requestData, { merge: true })
     return true
   } catch (error) {
     console.error('savePublicRequest: Firestore permission or data access issue', error)

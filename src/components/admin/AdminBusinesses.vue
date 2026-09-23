@@ -79,7 +79,15 @@ const legalDefaults = { privacy: 'Explica como se usan y protegen los datos que 
 function legalValue(key: keyof typeof legalDefaults) { return current.value.legal?.[key] || legalDefaults[key] }
 function updateLegal(key: keyof typeof legalDefaults, value: string) { update({ legal: { ...legalDefaults, ...current.value.legal, [key]: value } }) }
 function toggleEnglish() { if (!safeCurrentBusiness.value) return; const next = !safeCurrentBusiness.value.englishEnabled; workspaceUpdate({ englishEnabled: next, language: next ? 'en' : 'es' }); editingLanguage.value = next ? 'en' : 'es'; }
-async function saveChanges() { await app.persist(); saved.value = true }
+async function saveChanges() {
+  try {
+    await app.persist()
+    saved.value = true
+  } catch (error) {
+    console.error('No se pudo guardar el negocio', error)
+    saved.value = false
+  }
+}
 </script>
 
 <template>
