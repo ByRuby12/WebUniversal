@@ -40,7 +40,7 @@ function normalizeBusinessTranslations(business: Business): Business {
 
   const normalizedTranslations = {
     ...baseTranslations,
-    es: { ...makeTranslation(business), ...baseTranslations.es },
+    es: { ...baseTranslations.es, ...makeTranslation(business) },
     en: englishTranslation,
   }
 
