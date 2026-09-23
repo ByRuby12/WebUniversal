@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { ChevronLeft, ChevronRight, Check, Image, Link, Plus, Search, Share2, Trash2 } from 'lucide-vue-next'
 import { useAdminWorkspace } from '../../composables/useAdminWorkspace'
 import { moduleLabels } from '../../data'
 import { getModuleRecommendation } from '../../data/moduleRecommendations'
 import type { Business, BusinessTranslation, ModuleKey } from '../../types'
+import AdminPublicCopy from './AdminPublicCopy.vue'
 
 const workspace = useAdminWorkspace()
+const emit = defineEmits<{ saved: [message?: string] }>()
 const { app, search, saved, current: currentBusiness, businesses, update: workspaceUpdate, toggleModule, saveCurrentSelection } = workspace
 const fallbackBusiness = (): Business => ({
   id: '', name: 'Sin negocio', description: '', category: '', color: '#203b3a', image: '',
@@ -23,8 +25,28 @@ const current = computed<Business>(() => {
   if (editingLanguage.value === 'es' || !base.englishEnabled) return base
   return { ...base, ...(base.translations?.en ?? {}), language: 'en' }
 })
-const localizedKeys = new Set<keyof Business>(['name', 'description', 'category', 'phone', 'email', 'address', 'hours', 'about', 'story', 'services', 'process', 'serviceAreas', 'faq', 'pages', 'legal'])
-const expanded = ref<'identity' | 'content' | 'links' | 'modules' | 'legal'>('identity')
+const localizedKeys = new Set<keyof Business>(['name', 'description', 'category', 'phone', 'email', 'address', 'hours', 'about', 'story', 'services', 'process', 'serviceAreas', 'faq', 'pages', 'legal', 'proofRatingValue', 'proofRatingLabel', 'proofAreasValue', 'proofAreasLabel', 'proofResponseValue', 'proofResponseLabel', 'proofPricingValue', 'proofPricingLabel', 'storyEyebrow', 'storyTitle', 'storyAsideTitle', 'storyAsideText'])
+const expanded = ref<'identity' | 'content' | 'links' | 'modules' | 'legal' | null>(null)
+let sectionClickTarget: HTMLElement | null = null
+function handleSectionClick(event: Event) {
+  const target = event.target
+  if (!(target instanceof Element)) return
+  const toggle = target.closest('.section-toggle')
+  if (!toggle) return
+  const section = toggle.parentElement
+  const container = section?.parentElement
+  if (!section || !container) return
+  const sectionIndex = Array.from(container.children).indexOf(section)
+  if (sectionIndex < 0 || sectionIndex > 4) return
+  event.stopPropagation()
+  const keys = ['identity', 'content', 'links', 'modules', 'legal'] as const
+  expanded.value = expanded.value === keys[sectionIndex] ? null : keys[sectionIndex]
+}
+onMounted(() => {
+  sectionClickTarget = document.querySelector('.business-editor .editor-sections')
+  sectionClickTarget?.addEventListener('click', handleSectionClick, true)
+})
+onBeforeUnmount(() => sectionClickTarget?.removeEventListener('click', handleSectionClick, true))
 const page = ref(1)
 const pageSize = 12
 const newName = ref('Nuevo negocio')
@@ -85,17 +107,20 @@ watch(editingLanguage, (language) => {
 async function saveChanges() {
   try {
     await app.persistBusiness(safeCurrentBusiness.value)
-    saved.value = true
+    emit('saved', 'El negocio se ha guardado correctamente.')
   } catch (error) {
     console.error('No se pudo guardar el negocio', error)
-    saved.value = false
   }
+}
+async function saveSelection() {
+  await saveCurrentSelection()
+  emit('saved', 'El negocio activo se ha guardado correctamente.')
 }
 </script>
 
 <template>
   <div class="business-workspace">
-    <div class="business-toolbar"><label class="search"><Search :size="15" /><input v-model="search" placeholder="Buscar por nombre, categoria o sector..." /></label><span>Mostrando {{ rangeStart }}-{{ rangeEnd }} de {{ businesses.length }}</span><button class="button secondary" type="button" @click="saveCurrentSelection">Guardar negocio activo</button><button class="button" @click="addBusiness"><Plus :size="15" /> Nuevo negocio</button></div>
+      <div class="business-toolbar"><label class="search"><Search :size="15" /><input v-model="search" placeholder="Buscar por nombre, categoria o sector..." /></label><span>Mostrando {{ rangeStart }}-{{ rangeEnd }} de {{ businesses.length }}</span><button class="button secondary" type="button" @click="saveSelection">Guardar negocio activo</button><button class="button" @click="addBusiness"><Plus :size="15" /> Nuevo negocio</button></div>
     <div class="business-catalog"><button v-for="business in visibleBusinesses" :key="business.id" class="business-card" :class="{ selected: business.id === current.id }" @click="workspace.selectBusiness(business.id)"><img :src="business.image" :alt="business.name" /><span><strong>{{ business.name }}</strong><small>{{ business.category }}</small></span><Check v-if="business.id === current.id" :size="15" /></button></div>
     <div class="business-pagination"><button class="pagination-button" :disabled="page === 1" aria-label="Pagina anterior" @click="selectPage(page - 1)"><ChevronLeft :size="15" /></button><span>Pagina {{ page }} de {{ totalPages }}</span><button class="pagination-button" :disabled="page === totalPages" aria-label="Pagina siguiente" @click="selectPage(page + 1)"><ChevronRight :size="15" /></button></div>
     <section class="editor business-editor"><div class="editor-heading"><div><span class="eyebrow">EDITOR DEL NEGOCIO</span><h2>{{ current.name }}</h2><p>{{ activeCount }} modulos activos · {{ current.published ? 'Activo' : 'En edición' }}</p></div><div class="editor-heading-actions"><button class="button secondary" @click="togglePublished">{{ current.published ? 'Ocultar web' : 'Publicar web' }}</button><button class="button secondary" @click="saveChanges"><Check v-if="saved" :size="14" /> {{ saved ? 'Guardado' : 'Guardar cambios' }}</button></div></div><div class="content-language-picker"><div><span class="eyebrow">CONTENIDO DEL NEGOCIO</span><strong>Idioma que estás editando</strong><small>Escribe cada texto manualmente en español y en inglés. Redes, imágenes y enlaces son compartidos.</small></div><div class="language-segmented"><button type="button" :class="{ active: editingLanguage === 'es' }" @click="editingLanguage = 'es'">ES · Editar español</button><button type="button" :class="{ active: editingLanguage === 'en' }" @click="if (!currentBusiness.englishEnabled) toggleEnglish(); editingLanguage = 'en'">EN · Edit English</button></div><button type="button" class="toggle small-toggle" :class="{ on: currentBusiness.englishEnabled }" @click="toggleEnglish"><i /></button></div><div class="editor-sections">
@@ -104,6 +129,7 @@ async function saveChanges() {
       <section><button class="section-toggle" @click="expanded = expanded === 'links' ? 'identity' : 'links'"><span><Share2 :size="16" /> Redes y preguntas frecuentes</span><b>{{ expanded === 'links' ? '−' : '+' }}</b></button><div v-if="expanded === 'links'" class="form-grid"><div class="wide social-editor"><div class="field-intro"><div><strong>Redes sociales</strong><small>Añade las plataformas que quieras mostrar en tu web.</small></div><button class="button secondary compact-button" type="button" @click="addSocialLink"><Plus :size="14" /> Añadir red</button></div><div v-if="current.socialLinks.length" class="social-rows"><div v-for="(social, index) in current.socialLinks" :key="index" class="social-row"><input :value="social.name" placeholder="Instagram, YouTube..." aria-label="Nombre de la red social" @input="updateSocialLink(index, { name: ($event.target as HTMLInputElement).value })" /><input :value="social.url" type="url" placeholder="https://..." aria-label="URL de la red social" @input="updateSocialLink(index, { url: ($event.target as HTMLInputElement).value })" /><button class="icon-action danger" type="button" aria-label="Eliminar red social" @click="removeSocialLink(index)"><Trash2 :size="15" /></button></div></div><p v-else class="field-empty">Todavia no has añadido ninguna red social.</p></div><label class="wide">Preguntas frecuentes (Pregunta | Respuesta)<textarea :value="current.faq.map((item) => `${item.question} | ${item.answer}`).join('\n')" rows="4" @input="update({ faq: lines(($event.target as HTMLTextAreaElement).value).map((line) => { const [question, answer] = line.split('|'); return { question: question?.trim() ?? '', answer: answer?.trim() ?? '' } }) })" /></label></div></section>
       <section><button class="section-toggle" @click="expanded = expanded === 'modules' ? 'identity' : 'modules'"><span><Share2 :size="16" /> Funciones y solicitudes</span><b>{{ expanded === 'modules' ? '−' : '+' }}</b></button><div v-if="expanded === 'modules'" class="module-list"><label class="booking-interval-field">Intervalo entre citas (minutos)<input :value="current.bookingIntervalMinutes ?? 60" type="number" min="1" step="1" @input="update({ bookingIntervalMinutes: Math.max(1, Number(($event.target as HTMLInputElement).value) || 60) })" /><small>Permite horarios como 10:00, 10:30 o 10:40. Se guarda en Firebase con este negocio.</small></label><div v-for="key in Object.keys(moduleLabels) as ModuleKey[]" :key="key"><span><strong>{{ moduleLabels[key] }} <em v-if="recommendation(key).recommended">Recomendado</em></strong><small>{{ recommendation(key).note }}</small></span><button class="toggle" :class="{ on: current.modules[key] }" :aria-label="`${moduleLabels[key]}: ${current.modules[key] ? 'activo' : 'inactivo'}`" @click="toggleModule(key)"><i /></button></div></div></section>
       <section><button class="section-toggle" @click="expanded = expanded === 'legal' ? 'identity' : 'legal'"><span><Link :size="16" /> Politicas y privacidad</span><b>{{ expanded === 'legal' ? '−' : '+' }}</b></button><div v-if="expanded === 'legal'" class="form-grid"><label class="wide">Politica de privacidad<textarea :value="legalValue('privacy')" rows="4" @input="updateLegal('privacy', ($event.target as HTMLTextAreaElement).value)" /></label><label class="wide">Terminos y condiciones<textarea :value="legalValue('terms')" rows="4" @input="updateLegal('terms', ($event.target as HTMLTextAreaElement).value)" /></label><label class="wide">Politica de devoluciones<textarea :value="legalValue('returns')" rows="4" @input="updateLegal('returns', ($event.target as HTMLTextAreaElement).value)" /></label><label class="wide">Politica de soporte<textarea :value="legalValue('support')" rows="4" @input="updateLegal('support', ($event.target as HTMLTextAreaElement).value)" /></label></div></section>
+      <AdminPublicCopy :business="current" @update="update" />
     </div></section>
   </div>
 </template>

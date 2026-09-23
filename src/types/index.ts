@@ -8,12 +8,14 @@ export interface LegalContent { privacy: string; terms: string; returns: string;
 export interface BusinessTranslation {
   name?: string; description?: string; category?: string; phone?: string; email?: string; address?: string; hours?: string
   about?: string; story?: string; services?: string[]; process?: string[]; serviceAreas?: string[]
+  proofRatingValue?: string; proofRatingLabel?: string; proofAreasValue?: string; proofAreasLabel?: string; proofResponseValue?: string; proofResponseLabel?: string; proofPricingValue?: string; proofPricingLabel?: string; storyEyebrow?: string; storyTitle?: string; storyAsideTitle?: string; storyAsideText?: string
   faq?: Array<{ question: string; answer: string }>; pages?: BusinessPage[]; legal?: LegalContent
 }
 export interface Business {
   id: string; name: string; description: string; category: string; color: string; image: string
   modules: Record<ModuleKey, boolean>; requestMode?: RequestType; language?: 'es' | 'en'; englishEnabled?: boolean; phone: string; email: string; address: string; hours: string
   about: string; story: string; services: string[]; process: string[]; serviceAreas: string[]
+  proofRatingValue?: string; proofRatingLabel?: string; proofAreasValue?: string; proofAreasLabel?: string; proofResponseValue?: string; proofResponseLabel?: string; proofPricingValue?: string; proofPricingLabel?: string; storyEyebrow?: string; storyTitle?: string; storyAsideTitle?: string; storyAsideText?: string
   gallery: string[]; faq: Array<{ question: string; answer: string }>; socialLinks: Array<{ name: string; url: string }>
   pages: BusinessPage[]; reviews: Review[]; bookingSlots: string; bookingIntervalMinutes?: number; blockedDates: string[]; views: number; published: boolean; legal?: LegalContent
   publicSettings?: Partial<Pick<Settings, 'publicForms' | 'showWhatsApp' | 'darkMode' | 'cookieBanner' | 'analyticsEnabled' | 'maintenanceMode' | 'siteLanguage' | 'seoTitle' | 'seoDescription' | 'seoKeywords' | 'faviconUrl' | 'contactEmail' | 'searchIndexing'>>

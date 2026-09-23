@@ -5,9 +5,10 @@ import { useAppStore } from '../../stores/app'
 import { updateAccount } from '../../services/auth.service'
 
 const app = useAppStore()
+const emit = defineEmits<{ saved: [message?: string] }>()
 const password = ref('')
 const feedback = ref('')
-async function save() { feedback.value = ''; try { await updateAccount(app.profile.email, password.value || undefined); await app.persist(); password.value = ''; feedback.value = 'Cambios guardados correctamente.' } catch { feedback.value = 'No se pudo actualizar la cuenta. Firebase puede requerir volver a iniciar sesión.' } }
+async function save() { feedback.value = ''; try { await updateAccount(app.profile.email, password.value || undefined); await app.persist(); password.value = ''; emit('saved', 'El perfil se ha guardado correctamente.') } catch { feedback.value = 'No se pudo actualizar la cuenta. Firebase puede requerir volver a iniciar sesión.' } }
 </script>
 
 <template>
@@ -46,7 +47,7 @@ async function save() { feedback.value = ''; try { await updateAccount(app.profi
           <Save :size="15" />
           Guardar cambios
         </button>
-        <p v-if="feedback" class="settings-feedback" role="status">{{ feedback }}</p>
+        <p v-if="feedback" class="settings-feedback error" role="alert">{{ feedback }}</p>
       </article>
     </div>
   </div>

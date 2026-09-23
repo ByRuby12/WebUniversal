@@ -48,5 +48,17 @@ service cloud.firestore {
         && request.resource.data.ownerId == get(/databases/$(database)/documents/publicBusinesses/$(request.resource.data.businessId)).data.ownerId;
       allow read, update, delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
     }
+    match /publicReviews/{reviewId} {
+      allow create: if request.resource.data.businessId is string
+        && request.resource.data.name is string
+        && request.resource.data.text is string
+        && request.resource.data.rating is int
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5
+        && request.resource.data.approved == false
+        && request.resource.data.ownerId is string
+        && request.resource.data.ownerId == get(/databases/$(database)/documents/publicBusinesses/$(request.resource.data.businessId)).data.ownerId;
+      allow read, update, delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
+    }
   }
 }

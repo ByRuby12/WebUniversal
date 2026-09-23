@@ -8,10 +8,12 @@
     "build": "vue-tsc -b && vite build",
     "postbuild": "node scripts/copy-spa-fallback.mjs",
     "lint": "vue-tsc -b --pretty false",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "firebase:migrate": "node ruby/script.js"
   },
   "dependencies": {
     "firebase": "^12.19.0",
+    "firebase-admin": "^14.5.0",
     "lucide-vue-next": "^1.0.0",
     "pinia": "^4.0.3",
     "vue": "^3.5.42",

@@ -30,31 +30,11 @@ const ranking = computed(() =>
       <BarChart3 :size="62" />
     </section>
 
-    <div class="metrics stats-kpis">
-      <article>
-        <Eye :size="18" />
-        <small>Visitas</small>
-        <strong>{{ totalViews }}</strong>
-        <span>Todos los negocios</span>
-      </article>
-      <article>
-        <MessageCircle :size="18" />
-        <small>Solicitudes</small>
-        <strong>{{ totalRequests }}</strong>
-        <span>Entradas reales</span>
-      </article>
-      <article>
-        <TrendingUp :size="18" />
-        <small>Conversion</small>
-        <strong>{{ conversion }}</strong>
-        <span>Visita a solicitud</span>
-      </article>
-      <article>
-        <Globe2 :size="18" />
-        <small>Webs activas</small>
-        <strong>{{ app.stats.activeBusinesses || app.businesses.filter((business) => business.published).length }}</strong>
-        <span>Publicadas</span>
-      </article>
+    <div class="metrics overview-metrics stats-kpis">
+      <article class="metric-card"><div class="metric-heading"><Eye :size="18" /><small>Visitas recibidas</small></div><div class="metric-main"><strong>{{ totalViews }}</strong><span class="metric-unit">visitas</span></div><span class="metric-note">Todos los negocios publicados</span></article>
+      <article class="metric-card"><div class="metric-heading"><MessageCircle :size="18" /><small>Solicitudes</small></div><div class="metric-main"><strong>{{ totalRequests }}</strong><span class="metric-unit">total</span></div><span class="metric-note">Entradas reales de clientes</span></article>
+      <article class="metric-card"><div class="metric-heading"><TrendingUp :size="18" /><small>Conversión</small></div><div class="metric-main"><strong>{{ conversion }}</strong><span class="metric-unit">visita a solicitud</span></div><span class="metric-note">Rendimiento global</span></article>
+      <article class="metric-card"><div class="metric-heading"><Globe2 :size="18" /><small>Webs activas</small></div><div class="metric-main"><strong>{{ app.stats.activeBusinesses || app.businesses.filter((business) => business.published).length }}</strong><span class="metric-unit">publicadas</span></div><span class="metric-note">Negocios visibles online</span></article>
     </div>
 
     <div class="stats-columns">

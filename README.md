@@ -1,3 +1,53 @@
+
+## Respaldo y migracion Firebase
+
+El script `ruby/script.js` permite crear un respaldo del workspace y migrarlo a otro proyecto Firebase con un usuario nuevo. Copia negocios, traducciones, paginas, galeria, solicitudes, reseñas, metricas, ajustes y la copia publica.
+
+Requisitos:
+
+- Dos cuentas de servicio JSON con acceso a los proyectos origen y destino.
+- El UID del usuario origen.
+- Un email y una contraseña nuevos para el usuario destino.
+
+Crear solo un respaldo, sin escribir en otro proyecto:
+
+```powershell
+$env:MODE = 'backup'
+$env:SOURCE_PROJECT_ID = 'proyecto-origen'
+$env:SOURCE_UID = 'uid-del-usuario-origen'
+$env:SOURCE_SERVICE_ACCOUNT_JSON = 'C:\ruta\origen-service-account.json'
+npm run firebase:migrate
+```
+
+Migrar a otro proyecto. El valor `CONFIRM_MIGRATION=YES` es obligatorio para evitar ejecuciones accidentales:
+
+```powershell
+$env:MODE = 'migrate'
+$env:SOURCE_PROJECT_ID = 'proyecto-origen'
+$env:SOURCE_UID = 'uid-del-usuario-origen'
+$env:SOURCE_SERVICE_ACCOUNT_JSON = 'C:\ruta\origen-service-account.json'
+$env:TARGET_PROJECT_ID = 'proyecto-destino'
+$env:TARGET_SERVICE_ACCOUNT_JSON = 'C:\ruta\destino-service-account.json'
+$env:TARGET_EMAIL = 'nuevo-usuario@dominio.com'
+$env:TARGET_PASSWORD = 'una-contraseña-nueva'
+$env:CONFIRM_MIGRATION = 'YES'
+npm run firebase:migrate
+```
+
+Importar posteriormente solo desde el JSON, sin necesitar acceso al proyecto origen:
+
+```powershell
+$env:MODE = 'import'
+$env:BACKUP_JSON = 'C:\ruta\ruby\workspace.json'
+$env:TARGET_PROJECT_ID = 'proyecto-destino'
+$env:TARGET_SERVICE_ACCOUNT_JSON = 'C:\ruta\destino-service-account.json'
+$env:TARGET_EMAIL = 'nuevo@email.com'
+$env:TARGET_PASSWORD = 'nueva-contraseña'
+$env:CONFIRM_MIGRATION = 'YES'
+npm run firebase:migrate
+```
+
+El script crea `ruby/workspace.json` antes de migrar. No exporta contraseñas del usuario origen: la cuenta destino se crea o actualiza con `TARGET_PASSWORD`. No guardes los JSON de cuentas de servicio ni las variables con secretos en Git.
 # WebUniversal
 
 Plataforma web para crear, publicar y administrar sitios profesionales para negocios y servicios. Cada negocio puede tener su propia identidad, contenido, módulos y formulario de contacto.

@@ -1,6 +1,6 @@
 import { collection, deleteDoc, doc, getDoc, getDocs, limit, query, serverTimestamp, setDoc, where } from 'firebase/firestore'
 import { auth, db, hasFirebaseConfig } from './firebase'
-import type { Business, BusinessMetric, DashboardStats, Profile, RequestItem, Settings } from '../types'
+import type { Business, BusinessMetric, DashboardStats, Profile, RequestItem, Review, Settings } from '../types'
 
 function stripUndefined<T>(value: T): T {
   if (Array.isArray(value)) return value.map((item) => stripUndefined(item)) as T
@@ -20,7 +20,7 @@ const defaultSettings: Settings = {
   cookieBanner: true,
   analyticsEnabled: false,
   maintenanceMode: false,
-  siteLanguage: 'es',
+  siteLanguage: 'en',
   seoTitle: 'Marta Ruiz Interiorismo | Diseño de viviendas y espacios boutique',
   seoDescription: 'Estudio de arquitectura de interiores especializado en viviendas, locales y proyectos de alta personalización con un enfoque funcional y cálido.',
   seoKeywords: 'arquitectura de interiores, interiorismo, diseño de interiores, reforma de vivienda, estudio de interiores, espacios boutique',
@@ -48,13 +48,14 @@ function publicBusinessData(business: Business, settings: Settings, ownerId: str
     id: business.id, ownerId, name: business.name, description: business.description, category: business.category,
     color: business.color, image: business.image, modules: business.modules, requestMode: business.requestMode,
     language: business.language, englishEnabled: business.englishEnabled ?? false, phone: business.phone, email: normalized.contactEmail || business.email, address: business.address,
-    hours: business.hours, about: business.about, story: business.story, services: business.services,
+    hours: business.hours, about: business.about, story: business.story, storyEyebrow: business.storyEyebrow, storyTitle: business.storyTitle, storyAsideTitle: business.storyAsideTitle, storyAsideText: business.storyAsideText, services: business.services,
+    proofRatingValue: business.proofRatingValue, proofRatingLabel: business.proofRatingLabel, proofAreasValue: business.proofAreasValue, proofAreasLabel: business.proofAreasLabel, proofResponseValue: business.proofResponseValue, proofResponseLabel: business.proofResponseLabel, proofPricingValue: business.proofPricingValue, proofPricingLabel: business.proofPricingLabel,
     process: business.process, serviceAreas: business.serviceAreas, gallery: business.gallery, faq: business.faq,
     socialLinks: business.socialLinks, pages: business.pages.filter((page) => page.published),
     reviews: business.reviews.filter((review) => review.approved), bookingSlots: business.bookingSlots,
     blockedDates: business.blockedDates, published: business.published,
       translations: business.translations, bookingIntervalMinutes: business.bookingIntervalMinutes ?? 60,
-    publicSettings: { publicForms: normalized.publicForms, showWhatsApp: normalized.showWhatsApp, darkMode: normalized.darkMode, cookieBanner: normalized.cookieBanner, analyticsEnabled: normalized.analyticsEnabled, maintenanceMode: normalized.maintenanceMode, siteLanguage: business.language ?? normalized.siteLanguage, seoTitle: normalized.seoTitle, seoDescription: normalized.seoDescription, seoKeywords: normalized.seoKeywords, faviconUrl: normalized.faviconUrl, contactEmail: normalized.contactEmail, searchIndexing: normalized.searchIndexing },
+    publicSettings: { publicForms: normalized.publicForms, showWhatsApp: normalized.showWhatsApp, darkMode: normalized.darkMode, cookieBanner: normalized.cookieBanner, analyticsEnabled: normalized.analyticsEnabled, maintenanceMode: normalized.maintenanceMode, siteLanguage: normalized.siteLanguage, seoTitle: normalized.seoTitle, seoDescription: normalized.seoDescription, seoKeywords: normalized.seoKeywords, faviconUrl: normalized.faviconUrl, contactEmail: normalized.contactEmail, searchIndexing: normalized.searchIndexing },
   }
 }
 
@@ -77,11 +78,18 @@ export async function loadWorkspace() {
       getDoc(doc(firestoreDb, 'users', currentUser.uid, 'stats', 'summary')),
     ])
     let publicRequests: RequestItem[] = []
+    let publicReviews: Array<Review & { businessId: string }> = []
     try {
       const publicRequestsSnapshot = await getDocs(query(collection(firestoreDb, 'publicRequests'), where('ownerId', '==', currentUser.uid)))
       publicRequests = publicRequestsSnapshot.docs.map((item) => item.data() as RequestItem)
     } catch (error) {
       console.warn('loadWorkspace: no se pudieron leer solicitudes públicas', error)
+    }
+    try {
+      const publicReviewsSnapshot = await getDocs(query(collection(firestoreDb, 'publicReviews'), where('ownerId', '==', currentUser.uid)))
+      publicReviews = publicReviewsSnapshot.docs.map((item) => item.data() as Review & { businessId: string })
+    } catch (error) {
+      console.warn('loadWorkspace: no se pudieron leer reseñas públicas', error)
     }
 
     const data = userSnapshot.data() ?? {}
@@ -92,7 +100,11 @@ export async function loadWorkspace() {
     const workspace = {
       settings: data.settings as Settings | undefined,
       profile: data.profile as Profile | undefined,
-      businesses: businessesSnapshot.docs.map((item) => item.data() as Business),
+      businesses: businessesSnapshot.docs.map((item) => {
+        const business = item.data() as Business
+        const pendingReviews = publicReviews.filter((review) => review.businessId === business.id).map(({ businessId: _businessId, ...review }) => review)
+        return { ...business, reviews: [...business.reviews, ...pendingReviews.filter((review) => !business.reviews.some((saved) => saved.id === review.id))] }
+      }),
       requests: [...requestMap.values()],
       metrics,
       stats: statsSnapshot.exists() ? (statsSnapshot.data() as DashboardStats) : undefined,
@@ -254,4 +266,78 @@ export async function loadPublicBusinessSelection() {
   const snapshot = await getDoc(doc(db, 'siteConfig', 'current'))
   const currentBusinessId = snapshot.data()?.currentBusinessId
   return typeof currentBusinessId === 'string' && currentBusinessId ? currentBusinessId : null
+}
+
+export async function savePublicReview(businessId: string, review: Review, ownerId?: string) {
+  const saveLocalReview = () => {
+    if (typeof window === 'undefined') return
+    const stored = loadLocalPublicReviews()
+    const next = [...stored.filter((item) => item.id !== review.id), { ...review, businessId }]
+    window.localStorage.setItem('web-universal-public-reviews', JSON.stringify(next))
+  }
+
+  if (!hasFirebaseConfig || !db) { saveLocalReview(); return true }
+
+  try {
+    const firestoreDb = db
+    let resolvedOwnerId = ownerId
+    if (typeof resolvedOwnerId !== 'string') {
+      const publicBusiness = await getDoc(doc(firestoreDb, 'publicBusinesses', businessId))
+      resolvedOwnerId = publicBusiness.data()?.ownerId
+    }
+    if (!publicBusinessExists(resolvedOwnerId)) return false
+    await setDoc(doc(firestoreDb, 'publicReviews', `${businessId}-${review.id}`), stripUndefined({ ...review, businessId, ownerId: resolvedOwnerId }), { merge: true })
+    return true
+  } catch (error) {
+    console.error('savePublicReview: Firestore permission or data access issue', error)
+    saveLocalReview()
+    return false
+  }
+}
+
+function publicBusinessExists(ownerId: unknown): ownerId is string {
+  return typeof ownerId === 'string' && ownerId.length > 0
+}
+
+export function loadLocalPublicReviews(): Array<Review & { businessId: string }> {
+  if (typeof window === 'undefined') return []
+  try {
+    const stored = JSON.parse(window.localStorage.getItem('web-universal-public-reviews') ?? '[]') as Array<Review & { businessId: string }>
+    return Array.isArray(stored) ? stored : []
+  } catch {
+    return []
+  }
+}
+
+export async function migrateLocalPublicReviews(businessId: string, ownerId?: string) {
+  const firestoreDb = db
+  if (!hasFirebaseConfig || !firestoreDb || typeof ownerId !== 'string') return
+  const localReviews = loadLocalPublicReviews()
+  const pending = localReviews.filter((review) => review.businessId === businessId)
+  if (!pending.length) return
+
+  try {
+    await Promise.all(pending.map((review) => setDoc(doc(firestoreDb, 'publicReviews', `${businessId}-${review.id}`), stripUndefined({ ...review, ownerId }), { merge: true })))
+    const migratedIds = new Set(pending.map((review) => review.id))
+    const remaining = localReviews.filter((review) => !migratedIds.has(review.id))
+    window.localStorage.setItem('web-universal-public-reviews', JSON.stringify(remaining))
+  } catch {
+    // Keep the local copy so a temporary Firebase failure does not lose the review.
+  }
+}
+
+export async function deletePublicReview(businessId: string, reviewId: number) {
+  if (typeof window !== 'undefined') {
+    const remaining = loadLocalPublicReviews().filter((review) => !(review.businessId === businessId && review.id === reviewId))
+    window.localStorage.setItem('web-universal-public-reviews', JSON.stringify(remaining))
+  }
+
+  const firestoreDb = db
+  if (!hasFirebaseConfig || !firestoreDb) return
+
+  try {
+    await deleteDoc(doc(firestoreDb, 'publicReviews', `${businessId}-${reviewId}`))
+  } catch {
+    // The business sync below still removes approved reviews from publicBusinesses.
+  }
 }

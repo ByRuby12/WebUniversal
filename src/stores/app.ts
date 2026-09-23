@@ -2,12 +2,17 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { allBusinesses, buildEnglishTranslation } from '../data'
 import { sectorContent } from '../data/sectorContent'
-import { loadWorkspace, saveBusiness, savePublicRequest, saveWorkspace, saveWorkspaceSettings } from '../services/workspace.service'
+import { loadLocalPublicReviews, loadWorkspace, saveBusiness, savePublicRequest, saveWorkspace, saveWorkspaceSettings } from '../services/workspace.service'
 import type { Business, BusinessMetric, BusinessTranslation, DashboardStats, Profile, RequestItem, Settings } from '../types'
+
+const publicCopyDefaults = {
+  es: { proofRatingValue: '4.9/5', proofRatingLabel: 'Valoración de clientes', proofAreasValue: '3+', proofAreasLabel: 'Zonas de servicio', proofResponseValue: '48h', proofResponseLabel: 'Respuesta rápida', proofPricingValue: '✓', proofPricingLabel: 'Precios claros', storyEyebrow: 'SOBRE', storyTitle: 'Una forma de trabajar con sentido', storyAsideTitle: 'Trato cercano, resultados reales.', storyAsideText: 'Te acompañamos desde la primera conversación hasta el último detalle.' },
+  en: { proofRatingValue: '4.9/5', proofRatingLabel: 'Customer rating', proofAreasValue: '3+', proofAreasLabel: 'Service areas', proofResponseValue: '48h', proofResponseLabel: 'Fast response', proofPricingValue: '✓', proofPricingLabel: 'Clear pricing', storyEyebrow: 'ABOUT', storyTitle: 'A better way to work with purpose', storyAsideTitle: 'Personal approach, real results.', storyAsideText: 'We support you from the first conversation to the final detail.' },
+} satisfies Record<'es' | 'en', Partial<Business>>
 
 function normalizeBusinessTranslations(business: Business): Business {
   const baseTranslations = business.translations ?? {}
-  const makeTranslation = (source: Partial<Business> | undefined): BusinessTranslation => ({
+  const makeTranslation = (source: Partial<Business> | undefined, language: 'es' | 'en'): BusinessTranslation => ({
     name: source?.name,
     description: source?.description,
     category: source?.category,
@@ -16,6 +21,18 @@ function normalizeBusinessTranslations(business: Business): Business {
     address: source?.address,
     hours: source?.hours,
     about: source?.about,
+    proofRatingValue: source?.proofRatingValue ?? publicCopyDefaults[language].proofRatingValue,
+    proofRatingLabel: source?.proofRatingLabel ?? publicCopyDefaults[language].proofRatingLabel,
+    proofAreasValue: source?.proofAreasValue ?? publicCopyDefaults[language].proofAreasValue,
+    proofAreasLabel: source?.proofAreasLabel ?? publicCopyDefaults[language].proofAreasLabel,
+    proofResponseValue: source?.proofResponseValue ?? publicCopyDefaults[language].proofResponseValue,
+    proofResponseLabel: source?.proofResponseLabel ?? publicCopyDefaults[language].proofResponseLabel,
+    proofPricingValue: source?.proofPricingValue ?? publicCopyDefaults[language].proofPricingValue,
+    proofPricingLabel: source?.proofPricingLabel ?? publicCopyDefaults[language].proofPricingLabel,
+    storyEyebrow: source?.storyEyebrow ?? publicCopyDefaults[language].storyEyebrow,
+    storyTitle: source?.storyTitle ?? publicCopyDefaults[language].storyTitle,
+    storyAsideTitle: source?.storyAsideTitle ?? publicCopyDefaults[language].storyAsideTitle,
+    storyAsideText: source?.storyAsideText ?? publicCopyDefaults[language].storyAsideText,
     story: source?.story,
     services: source?.services,
     process: source?.process,
@@ -36,15 +53,16 @@ function normalizeBusinessTranslations(business: Business): Business {
   }
 
   const generatedEnglish = buildEnglishTranslation(business)
-  const englishTranslation = looksLikeSpanish(baseTranslations.en) ? generatedEnglish : { ...generatedEnglish, ...baseTranslations.en }
+  const englishTranslation = looksLikeSpanish(baseTranslations.en) ? { ...generatedEnglish, ...publicCopyDefaults.en, ...makeTranslation(baseTranslations.en, 'en') } : { ...generatedEnglish, ...publicCopyDefaults.en, ...baseTranslations.en }
 
   const normalizedTranslations = {
     ...baseTranslations,
-    es: { ...baseTranslations.es, ...makeTranslation(business) },
+    es: { ...publicCopyDefaults.es, ...baseTranslations.es, ...makeTranslation(business, 'es') },
     en: englishTranslation,
   }
 
   return {
+    ...publicCopyDefaults.es,
     ...business,
     englishEnabled: business.englishEnabled ?? false,
     translations: normalizedTranslations,
@@ -61,7 +79,7 @@ const createDefaultSettings = (): Settings => ({
   cookieBanner: true,
   analyticsEnabled: false,
   maintenanceMode: false,
-  siteLanguage: 'es',
+  siteLanguage: 'en',
   seoTitle: 'Marta Ruiz Interiorismo | Diseño de viviendas y espacios boutique',
   seoDescription: 'Estudio de arquitectura de interiores especializado en viviendas, locales y proyectos de alta personalización con un enfoque funcional y cálido.',
   seoKeywords: 'arquitectura de interiores, interiorismo, diseño de interiores, reforma de vivienda, estudio de interiores, espacios boutique',
@@ -173,13 +191,21 @@ export const useAppStore = defineStore('app', () => {
       await saveWorkspace(settings.value, profile.value, businesses.value, requests.value, metrics.value, initialStats)
       remote = await loadWorkspace()
     }
-    if (!remote) return null
+    const localReviews = loadLocalPublicReviews()
+    const applyLocalReviews = () => {
+      businesses.value = businesses.value.map((business) => {
+        const pendingReviews = localReviews.filter((review) => review.businessId === business.id).map(({ businessId: _businessId, ...review }) => review)
+        return { ...business, reviews: [...business.reviews, ...pendingReviews.filter((review) => !business.reviews.some((saved) => saved.id === review.id))] }
+      })
+    }
+    if (!remote) { applyLocalReviews(); return null }
     if (remote.businesses.length) businesses.value = remote.businesses.map((business) => {
       const academyContent = sectorContent.academy
       const isGenericAcademy = business.id === 'academy' && business.services?.[0] === 'Servicio principal'
       const normalized = normalizeBusinessTranslations(isGenericAcademy ? { ...business, ...academyContent, modules: { ...business.modules, ...academyContent.modules } } : business)
       return normalized
     })
+    applyLocalReviews()
     requests.value = remote.requests.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     metrics.value = remote.metrics ?? {}
     stats.value = remote.stats ?? { totalViews: 0, totalRequests: 0, conversion: 0, activeBusinesses: 0 }

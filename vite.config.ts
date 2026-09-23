@@ -5,4 +5,9 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [vue()],
   base: '/WebUniversal/',
+  server: {
+    watch: {
+      ignored: ['**/ruby/**/*.json'],
+    },
+  },
 })
