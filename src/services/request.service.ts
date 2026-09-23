@@ -25,6 +25,11 @@ function toMinutes(value: string) {
   return Number.isFinite(hours) && Number.isFinite(minutes) ? hours * 60 + minutes : null
 }
 
+function bookingInterval(business: Business) {
+  const interval = Number(business.bookingIntervalMinutes)
+  return Number.isFinite(interval) && interval > 0 ? interval : 60
+}
+
 function bookingDuration(business: Business, date: string) {
   const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado']
   const day = dayNames[new Date(`${date}T12:00:00`).getDay()]
@@ -48,6 +53,7 @@ export function bookingConflict(business: Business, requests: RequestItem[], dra
   if (slotStart === null || slotEnd === null || start < slotStart) return true
   const duration = bookingDuration(business, draft.date)
   const end = start + duration
+  if ((start - slotStart) % bookingInterval(business) !== 0) return true
   if (end > slotEnd) return true
   return requests.some((request) => {
     if (request.businessId !== business.id || request.type !== 'reserva' || request.status === 'cancelada' || request.responseStatus === 'contestado' || request.preferredDate !== draft.date || !request.preferredTime) return false

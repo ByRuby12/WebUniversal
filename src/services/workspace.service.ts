@@ -53,7 +53,7 @@ function publicBusinessData(business: Business, settings: Settings, ownerId: str
     socialLinks: business.socialLinks, pages: business.pages.filter((page) => page.published),
     reviews: business.reviews.filter((review) => review.approved), bookingSlots: business.bookingSlots,
     blockedDates: business.blockedDates, published: business.published,
-    translations: business.translations,
+      translations: business.translations, bookingIntervalMinutes: business.bookingIntervalMinutes ?? 60,
     publicSettings: { publicForms: normalized.publicForms, showWhatsApp: normalized.showWhatsApp, darkMode: normalized.darkMode, cookieBanner: normalized.cookieBanner, analyticsEnabled: normalized.analyticsEnabled, maintenanceMode: normalized.maintenanceMode, siteLanguage: business.language ?? normalized.siteLanguage, seoTitle: normalized.seoTitle, seoDescription: normalized.seoDescription, seoKeywords: normalized.seoKeywords, faviconUrl: normalized.faviconUrl, contactEmail: normalized.contactEmail, searchIndexing: normalized.searchIndexing },
   }
 }

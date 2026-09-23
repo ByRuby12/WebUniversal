@@ -15,7 +15,7 @@ export interface Business {
   modules: Record<ModuleKey, boolean>; requestMode?: RequestType; language?: 'es' | 'en'; englishEnabled?: boolean; phone: string; email: string; address: string; hours: string
   about: string; story: string; services: string[]; process: string[]; serviceAreas: string[]
   gallery: string[]; faq: Array<{ question: string; answer: string }>; socialLinks: Array<{ name: string; url: string }>
-  pages: BusinessPage[]; reviews: Review[]; bookingSlots: string; blockedDates: string[]; views: number; published: boolean; legal?: LegalContent
+  pages: BusinessPage[]; reviews: Review[]; bookingSlots: string; bookingIntervalMinutes?: number; blockedDates: string[]; views: number; published: boolean; legal?: LegalContent
   publicSettings?: Partial<Pick<Settings, 'publicForms' | 'showWhatsApp' | 'darkMode' | 'cookieBanner' | 'analyticsEnabled' | 'maintenanceMode' | 'siteLanguage' | 'seoTitle' | 'seoDescription' | 'seoKeywords' | 'faviconUrl' | 'contactEmail' | 'searchIndexing'>>
   translations?: Partial<Record<'es' | 'en', BusinessTranslation>>
 }
