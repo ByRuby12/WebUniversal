@@ -69,18 +69,17 @@ export async function loadWorkspace() {
 
   try {
     const user = doc(firestoreDb, 'users', currentUser.uid)
-    const [userSnapshot, businessesSnapshot, requestsSnapshot, publicRequestsSnapshot, metricsSnapshot, statsSnapshot] = await Promise.all([
+    const [userSnapshot, businessesSnapshot, requestsSnapshot, metricsSnapshot, statsSnapshot] = await Promise.all([
       getDoc(user),
       getDocs(collection(firestoreDb, 'users', currentUser.uid, 'businesses')),
       getDocs(collection(firestoreDb, 'users', currentUser.uid, 'requests')),
-      getDocs(query(collection(firestoreDb, 'publicRequests'), where('ownerId', '==', currentUser.uid))),
       getDocs(collection(firestoreDb, 'users', currentUser.uid, 'businessMetrics')),
       getDoc(doc(firestoreDb, 'users', currentUser.uid, 'stats', 'summary')),
     ])
 
     const data = userSnapshot.data() ?? {}
     const requestMap = new Map<string, RequestItem>()
-    ;[...publicRequestsSnapshot.docs, ...requestsSnapshot.docs].forEach((item) => requestMap.set(String(item.id), item.data() as RequestItem))
+    requestsSnapshot.docs.forEach((item) => requestMap.set(String(item.id), item.data() as RequestItem))
     const metrics = Object.fromEntries(metricsSnapshot.docs.map((item) => [item.id, item.data() as BusinessMetric]))
 
     const workspace = {
@@ -150,7 +149,7 @@ export async function saveWorkspace(settings: Settings, profile: Profile, busine
   ])
 }
 
-export async function saveWorkspaceSettings(settings: Settings, profile: Profile) {
+export async function saveWorkspaceSettings(settings: Settings, profile: Profile, businesses: Business[]) {
   const firebaseAuth = auth
   const firestoreDb = db
 
@@ -164,21 +163,32 @@ export async function saveWorkspaceSettings(settings: Settings, profile: Profile
     profile,
     updatedAt: serverTimestamp(),
   }), { merge: true })
+
+  await Promise.all(businesses.filter((business) => business.published).map((business) => setDoc(
+    doc(firestoreDb, 'publicBusinesses', business.id),
+    stripUndefined(publicBusinessData(business, settings, currentUser.uid)),
+    { merge: true },
+  )))
 }
 
 export async function savePublicRequest(request: RequestItem) {
   if (!hasFirebaseConfig || !db) return false
 
-  const publicBusiness = await getDoc(doc(db, 'publicBusinesses', request.businessId))
-  const ownerId = publicBusiness.data()?.ownerId
-  if (!publicBusiness.exists() || !publicBusiness.data()?.published || typeof ownerId !== 'string') return false
+  try {
+    const publicBusiness = await getDoc(doc(db, 'publicBusinesses', request.businessId))
+    const ownerId = publicBusiness.data()?.ownerId
+    if (!publicBusiness.exists() || !publicBusiness.data()?.published || typeof ownerId !== 'string') return false
 
-  const requestData = stripUndefined({ ...request, ownerId })
-  await Promise.all([
-    setDoc(doc(db, 'publicRequests', String(request.id)), requestData, { merge: true }),
-    setDoc(doc(db, 'users', ownerId, 'requests', String(request.id)), requestData, { merge: true }),
-  ])
-  return true
+    const requestData = stripUndefined({ ...request, ownerId })
+    await Promise.all([
+      setDoc(doc(db, 'publicRequests', String(request.id)), requestData, { merge: true }),
+      setDoc(doc(db, 'users', ownerId, 'requests', String(request.id)), requestData, { merge: true }),
+    ])
+    return true
+  } catch (error) {
+    console.error('savePublicRequest: Firestore permission or data access issue', error)
+    return false
+  }
 }
 
 export async function loadPublicBusiness(businessId: string) {

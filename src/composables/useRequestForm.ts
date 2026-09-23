@@ -1,10 +1,11 @@
 import { ref } from 'vue'
 import { useAppStore } from '../stores/app'
 import { bookingConflict, buildRequest, emptyRequestDraft, type RequestDraft } from '../services/request.service'
-import type { RequestType } from '../types'
+import type { Business, RequestType } from '../types'
 
-export function useRequestForm() {
+export function useRequestForm(getBusiness?: () => Business | null) {
   const app = useAppStore()
+  const resolveBusiness = getBusiness ?? (() => app.selectedBusiness)
   const requestOpen = ref(false)
   const requestType = ref<RequestType>('consulta')
   const draft = ref<RequestDraft>(emptyRequestDraft())
@@ -43,12 +44,18 @@ export function useRequestForm() {
 
     if (!window.confirm('Al enviar esta solicitud aceptas la política de privacidad y las condiciones del negocio.')) return
 
-    if (requestType.value === 'reserva' && bookingConflict(app.selectedBusiness, app.requests, draft.value)) {
+    const currentBusiness = resolveBusiness()
+    if (!currentBusiness) {
+      error.value = 'No hay un negocio público disponible para recibir solicitudes.'
+      return
+    }
+
+    if (requestType.value === 'reserva' && bookingConflict(currentBusiness, app.requests, draft.value)) {
       error.value = 'Ese horario no está disponible. Comprueba la fecha, el horario de apertura y las fechas bloqueadas.'
       return
     }
 
-    const saved = await app.addRequest(buildRequest(requestType.value, app.selectedBusiness.id, draft.value))
+    const saved = await app.addRequest(buildRequest(requestType.value, currentBusiness.id, draft.value))
     if (!saved) {
       error.value = 'No se ha podido guardar la solicitud. Comprueba la configuración de Firebase.'
       return

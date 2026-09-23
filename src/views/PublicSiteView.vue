@@ -10,7 +10,10 @@ import type { Business, RequestType } from '../types'
 const route = useRoute(); const app = useAppStore(); const publicBusiness = ref<Business | null>(null); const baseBusiness = computed(() => {
   const savedBusiness = app.businesses.find((business) => business.id === app.settings.currentBusinessId && business.published)
   return publicBusiness.value ?? savedBusiness ?? app.businesses.find((business) => business.published) ?? app.selectedBusiness
-}); const siteLanguage = computed<'es' | 'en'>(() => (baseBusiness.value.englishEnabled ? (baseBusiness.value.language ?? app.settings.siteLanguage) : 'es')); const business = computed(() => ({ ...baseBusiness.value, ...(baseBusiness.value.englishEnabled ? (baseBusiness.value.translations?.[siteLanguage.value] ?? {}) : {}) })); const { requestOpen, requestType, draft, error: requestError, successMessage, openRequest, closeRequest, submitRequest } = useRequestForm()
+}); const siteLanguage = computed<'es' | 'en'>(() => (baseBusiness.value.englishEnabled ? (baseBusiness.value.language ?? app.settings.siteLanguage) : 'es')); const business = computed(() => {
+  const translation = baseBusiness.value.englishEnabled ? (baseBusiness.value.translations?.[siteLanguage.value] ?? {}) : {}
+  return { ...baseBusiness.value, ...Object.fromEntries(Object.entries(translation).filter(([, value]) => value !== undefined)) }
+}); const { requestOpen, requestType, draft, error: requestError, successMessage, openRequest, closeRequest, submitRequest } = useRequestForm(() => publicBusiness.value ?? app.selectedBusiness)
 const publicMissing = ref(false)
 function t(spanish: string, english: string) { return siteLanguage.value === 'en' ? english : spanish }
 const contactEmail = computed(() => app.settings.contactEmail || business.value.email)
@@ -135,6 +138,7 @@ async function loadSite() {
 }
 onMounted(() => { void loadSite() })
 watch(() => route.params.businessId, () => { void loadSite() })
+watch(pageTitle, (title) => { document.title = title }, { immediate: true })
 function scrollToSection(id: string) { document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); activeSection.value = id }
 function socialIcon(name: string) { const normalized = name.toLowerCase(); if (normalized.includes('instagram')) return Instagram; if (normalized.includes('facebook')) return Facebook; if (normalized.includes('youtube')) return Youtube; if (normalized.includes('linkedin')) return Linkedin; if (normalized.includes('whatsapp')) return MessageCircle; return Share2 }
 </script>
