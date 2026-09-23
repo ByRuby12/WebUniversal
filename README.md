@@ -131,6 +131,20 @@ La base de Vite está configurada como `/WebUniversal/` en [vite.config.ts](vite
 
 En GitHub, abre **Settings → Pages** y selecciona **GitHub Actions** como fuente de despliegue.
 
+Para que el login y el panel funcionen en la web publicada, crea estos secretos en **Settings → Secrets and variables → Actions → New repository secret**. Usa exactamente estos nombres y copia los valores correspondientes de tu `.env` local:
+
+```text
+VITE_FIREBASE_API_KEY
+VITE_FIREBASE_AUTH_DOMAIN
+VITE_FIREBASE_PROJECT_ID
+VITE_FIREBASE_STORAGE_BUCKET
+VITE_FIREBASE_MESSAGING_SENDER_ID
+VITE_FIREBASE_APP_ID
+VITE_FIREBASE_APPCHECK_SITE_KEY
+```
+
+El último secreto es opcional. No publiques los valores en el README, en el código ni en los mensajes de commit.
+
 ## Estructura principal
 
 ```text
