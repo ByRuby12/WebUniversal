@@ -11,7 +11,9 @@ const route = useRoute(); const app = useAppStore(); const publicBusiness = ref<
   const savedBusiness = app.businesses.find((business) => business.id === app.settings.currentBusinessId && business.published)
   return publicBusiness.value ?? savedBusiness ?? app.businesses.find((business) => business.published) ?? app.selectedBusiness
 }); const siteLanguage = computed<'es' | 'en'>(() => (baseBusiness.value.englishEnabled ? (baseBusiness.value.language ?? app.settings.siteLanguage) : 'es')); const business = computed(() => {
-  const translation = baseBusiness.value.englishEnabled ? (baseBusiness.value.translations?.[siteLanguage.value] ?? {}) : {}
+  const translation = baseBusiness.value.englishEnabled && siteLanguage.value === 'en'
+    ? (baseBusiness.value.translations?.en ?? {})
+    : {}
   return { ...baseBusiness.value, ...Object.fromEntries(Object.entries(translation).filter(([, value]) => value !== undefined)) }
 }); const { requestOpen, requestType, draft, error: requestError, successMessage, openRequest, closeRequest, submitRequest } = useRequestForm(() => publicBusiness.value ?? app.selectedBusiness)
 const publicMissing = ref(false)
