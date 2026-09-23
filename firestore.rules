@@ -21,8 +21,16 @@ service cloud.firestore {
     }
     match /publicBusinesses/{businessId} {
       allow read: if resource.data.published == true;
-      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
-      allow update, delete: if request.auth != null && resource.data.ownerId == request.auth.uid && request.resource.data.ownerId == request.auth.uid;
+      allow create: if request.auth != null
+        && request.resource.data.ownerId == request.auth.uid
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid)/businesses/$(businessId));
+      allow update: if request.auth != null
+        && request.resource.data.ownerId == request.auth.uid
+        && (resource.data.ownerId == request.auth.uid
+          || exists(/databases/$(database)/documents/users/$(request.auth.uid)/businesses/$(businessId)));
+      allow delete: if request.auth != null
+        && (resource.data.ownerId == request.auth.uid
+          || exists(/databases/$(database)/documents/users/$(request.auth.uid)/businesses/$(businessId)));
     }
     match /siteConfig/{document} {
       allow read: if true;
