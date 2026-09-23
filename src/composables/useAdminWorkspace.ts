@@ -22,7 +22,7 @@ export function useAdminWorkspace() {
     if (!current.value) return
     app.settings.currentBusinessId = current.value.id
     try {
-      await app.persist()
+      await app.persistSettings()
       saved.value = true
     } catch (error) {
       console.error('No se pudo guardar el negocio activo', error)
@@ -32,7 +32,8 @@ export function useAdminWorkspace() {
   function applyBusiness(id: string) {
     app.setSelected(id)
     if (!app.settings.autosave) {
-      void app.persist()
+      const business = app.businesses.find((item) => item.id === id)
+      if (business) void app.persistBusiness(business)
     }
     saved.value = true
   }

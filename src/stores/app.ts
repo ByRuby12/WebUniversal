@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { allBusinesses, buildEnglishTranslation } from '../data'
 import { sectorContent } from '../data/sectorContent'
-import { loadWorkspace, savePublicRequest, saveWorkspace, saveWorkspaceSettings } from '../services/workspace.service'
+import { loadWorkspace, saveBusiness, savePublicRequest, saveWorkspace, saveWorkspaceSettings } from '../services/workspace.service'
 import type { Business, BusinessMetric, BusinessTranslation, DashboardStats, Profile, RequestItem, Settings } from '../types'
 
 function normalizeBusinessTranslations(business: Business): Business {
@@ -217,8 +217,9 @@ export const useAppStore = defineStore('app', () => {
   }
 
   const persistSettings = () => saveWorkspaceSettings(settings.value, profile.value, businesses.value)
+  const persistBusiness = (business: Business) => saveBusiness(business, settings.value)
 
   recalculateMetrics()
 
-  return { businesses, requests, metrics, stats, selectedId, profile, settings, selectedBusiness, editorBusiness, setSelected, updateBusiness, addBusiness, addRequest, updateRequest, incrementViews, hydrate, persist, persistSettings, persistIfAutosave }
+  return { businesses, requests, metrics, stats, selectedId, profile, settings, selectedBusiness, editorBusiness, setSelected, updateBusiness, addBusiness, addRequest, updateRequest, incrementViews, hydrate, persist, persistSettings, persistBusiness, persistIfAutosave }
 })

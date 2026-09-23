@@ -81,7 +81,7 @@ function updateLegal(key: keyof typeof legalDefaults, value: string) { update({ 
 function toggleEnglish() { if (!safeCurrentBusiness.value) return; const next = !safeCurrentBusiness.value.englishEnabled; workspaceUpdate({ englishEnabled: next, language: next ? 'en' : 'es' }); editingLanguage.value = next ? 'en' : 'es'; }
 async function saveChanges() {
   try {
-    await app.persist()
+    await app.persistBusiness(safeCurrentBusiness.value)
     saved.value = true
   } catch (error) {
     console.error('No se pudo guardar el negocio', error)

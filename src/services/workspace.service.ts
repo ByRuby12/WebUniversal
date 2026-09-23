@@ -174,6 +174,28 @@ export async function saveWorkspaceSettings(settings: Settings, profile: Profile
   await syncPublishedBusinesses(normalizeSettings(settings), businesses, currentUser.uid)
 }
 
+export async function saveBusiness(business: Business, settings: Settings) {
+  const firebaseAuth = auth
+  const firestoreDb = db
+
+  if (!hasFirebaseConfig || !firebaseAuth || !firestoreDb) return
+
+  const currentUser = firebaseAuth.currentUser
+  if (!currentUser) return
+
+  await setDoc(
+    doc(firestoreDb, 'users', currentUser.uid, 'businesses', business.id),
+    stripUndefined(business),
+    { merge: true },
+  )
+  await setDoc(
+    doc(firestoreDb, 'users', currentUser.uid, 'businessMetrics', business.id),
+    stripUndefined({ id: business.id, views: Number(business.views ?? 0), published: business.published, updatedAt: new Date().toISOString() }),
+    { merge: true },
+  )
+  await syncPublishedBusinesses(normalizeSettings(settings), [business], currentUser.uid)
+}
+
 async function syncPublishedBusinesses(settings: Settings, businesses: Business[], ownerId: string) {
   const firestoreDb = db
   if (!firestoreDb) return
