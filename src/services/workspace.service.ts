@@ -157,6 +157,7 @@ export async function saveWorkspace(settings: Settings, profile: Profile, busine
 }
 
 export async function saveWorkspaceSettings(settings: Settings, profile: Profile) {
+export async function saveWorkspaceSettings(settings: Settings, profile: Profile, businesses: Business[]) {
   const firebaseAuth = auth
   const firestoreDb = db
 
@@ -171,6 +172,7 @@ export async function saveWorkspaceSettings(settings: Settings, profile: Profile
     updatedAt: serverTimestamp(),
   }), { merge: true })
 
+  await syncPublishedBusinesses(normalizeSettings(settings), businesses, currentUser.uid)
 }
 
 async function syncPublishedBusinesses(settings: Settings, businesses: Business[], ownerId: string) {
