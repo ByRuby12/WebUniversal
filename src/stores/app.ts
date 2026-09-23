@@ -216,7 +216,6 @@ export const useAppStore = defineStore('app', () => {
     return persistPromise
   }
 
-  const persistSettings = () => saveWorkspaceSettings(settings.value, profile.value)
   const persistSettings = () => saveWorkspaceSettings(settings.value, profile.value, businesses.value)
 
   recalculateMetrics()
