@@ -156,7 +156,6 @@ export async function saveWorkspace(settings: Settings, profile: Profile, busine
   await syncPublishedBusinesses(normalizedSettings, businesses, currentUser.uid)
 }
 
-export async function saveWorkspaceSettings(settings: Settings, profile: Profile) {
 export async function saveWorkspaceSettings(settings: Settings, profile: Profile, businesses: Business[]) {
   const firebaseAuth = auth
   const firestoreDb = db
