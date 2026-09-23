@@ -133,7 +133,7 @@ En GitHub, abre **Settings → Pages** y selecciona **GitHub Actions** como fuen
 
 La configuración web pública de Firebase está incluida en `src/services/firebase.ts`, porque estos valores deben llegar al navegador para que una aplicación Vue estática pueda conectarse a Firebase. El archivo `.env.local` puede sobrescribirlos durante el desarrollo, pero no es obligatorio crear secretos de GitHub para esta configuración pública.
 
-Si prefieres inyectar la configuración durante el despliegue, también puedes crear estos secretos en **Settings → Secrets and variables → Actions → New repository secret**:
+No es necesario crear secretos de GitHub Actions para desplegar esta configuración pública.
 
 ```text
 VITE_FIREBASE_API_KEY
@@ -145,7 +145,7 @@ VITE_FIREBASE_APP_ID
 VITE_FIREBASE_APPCHECK_SITE_KEY
 ```
 
-El último secreto es opcional. No incluyas contraseñas, tokens privados ni claves de servidor en variables `VITE_*`. Protege la configuración de Firebase mediante reglas de Firestore/Storage, Authentication, dominios autorizados y restricciones de la API key.
+Estos nombres solo son necesarios si quieres sobrescribir la configuración durante un desarrollo o despliegue alternativo. No incluyas contraseñas, tokens privados ni claves de servidor en variables `VITE_*`. Protege la configuración de Firebase mediante reglas de Firestore/Storage, Authentication, dominios autorizados y restricciones de la API key.
 
 ## Estructura principal
 
