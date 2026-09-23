@@ -3,7 +3,9 @@ import { auth, hasFirebaseConfig } from './firebase'
 
 export async function signIn(email: string, password: string): Promise<string> {
   if (!hasFirebaseConfig || !auth) {
-    throw new Error('La aplicación está configurada para usar Firebase. Revisa tu archivo .env.local.')
+    const error = new Error('Firebase no está configurado en esta versión publicada. Revisa los secretos VITE_FIREBASE_* de GitHub Actions.') as Error & { code: string }
+    error.code = 'app/firebase-config-missing'
+    throw error
   }
 
   const result = await signInWithEmailAndPassword(auth, email, password)

@@ -62,8 +62,13 @@ export const useAuthStore = defineStore('auth', () => {
       const firebaseCode = caughtError instanceof Error && 'code' in caughtError
         ? String((caughtError as Error & { code?: unknown }).code)
         : ''
-      console.error('No se pudo iniciar sesión', { code: firebaseCode || 'unknown' })
-      error.value = firebaseCode === 'auth/invalid-credential' || firebaseCode === 'auth/user-not-found' || firebaseCode === 'auth/wrong-password'
+      console.error('No se pudo iniciar sesión', {
+        code: firebaseCode || 'unknown',
+        message: caughtError instanceof Error ? caughtError.message : String(caughtError),
+      })
+      error.value = firebaseCode === 'app/firebase-config-missing'
+        ? 'Firebase no está configurado en la versión publicada. Revisa los secretos de GitHub Actions y vuelve a ejecutar el despliegue.'
+        : firebaseCode === 'auth/invalid-credential' || firebaseCode === 'auth/user-not-found' || firebaseCode === 'auth/wrong-password'
         ? 'El correo o la contraseña no son correctos.'
         : firebaseCode === 'auth/operation-not-allowed'
           ? 'El acceso con correo y contraseña no está activado en Firebase.'
@@ -71,9 +76,7 @@ export const useAuthStore = defineStore('auth', () => {
             ? 'No se pudo conectar con Firebase. Comprueba tu conexión e inténtalo de nuevo.'
             : firebaseCode === 'auth/too-many-requests'
               ? 'Se han bloqueado temporalmente los intentos. Espera unos minutos e inténtalo de nuevo.'
-              : caughtError instanceof Error && caughtError.message.includes('configurada')
-                ? caughtError.message
-                : 'No se pudo iniciar sesión. Revisa la configuración de Firebase y las credenciales.'
+              : 'No se pudo iniciar sesión. Revisa la configuración de Firebase y las credenciales.'
       throw new Error(error.value)
     } finally {
       loading.value = false
