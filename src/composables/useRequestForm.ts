@@ -42,8 +42,6 @@ export function useRequestForm(getBusiness?: () => Business | null) {
       return
     }
 
-    if (!window.confirm('Al enviar esta solicitud aceptas la política de privacidad y las condiciones del negocio.')) return
-
     const currentBusiness = resolveBusiness()
     if (!currentBusiness) {
       error.value = 'No hay un negocio público disponible para recibir solicitudes.'
