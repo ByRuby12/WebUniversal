@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ArrowRight, ArrowUpRight, Check, ChevronDown, Facebook, FileText, Globe2, HeartHandshake, Instagram, Linkedin, Mail, MapPin, MessageCircle, Phone, Share2, ShieldCheck, X, Youtube } from 'lucide-vue-next'
 import { useAppStore } from '../stores/app'
@@ -138,8 +138,7 @@ async function loadSite() {
   sectionObserver = new IntersectionObserver((entries) => entries.forEach((entry) => { if (entry.isIntersecting) activeSection.value = entry.target.id }), { rootMargin: '-35% 0px -55% 0px' })
   document.querySelectorAll('.public-site section[id]').forEach((section) => sectionObserver?.observe(section))
 }
-onMounted(() => { void loadSite() })
-watch(() => route.params.businessId, () => { void loadSite() })
+watch(() => route.fullPath, () => { void loadSite() }, { immediate: true })
 watch(pageTitle, (title) => { document.title = title }, { immediate: true })
 function scrollToSection(id: string) { document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); activeSection.value = id }
 function socialIcon(name: string) { const normalized = name.toLowerCase(); if (normalized.includes('instagram')) return Instagram; if (normalized.includes('facebook')) return Facebook; if (normalized.includes('youtube')) return Youtube; if (normalized.includes('linkedin')) return Linkedin; if (normalized.includes('whatsapp')) return MessageCircle; return Share2 }
