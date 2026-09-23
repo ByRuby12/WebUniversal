@@ -95,8 +95,13 @@ const navigationSections = computed(() => {
 const activeSection = ref('inicio')
 let sectionObserver: IntersectionObserver | undefined
 async function loadSite() {
-  const routeBusinessId = route.params.businessId
-  publicBusiness.value = null
+  const hashBusinessId = window.location.hash.match(/^#\/site\/([^?/#]+)/)?.[1]
+  const routeBusinessId = hashBusinessId ?? (typeof route.params.businessId === 'string'
+    ? route.params.businessId
+    : route.path.match(/^\/site\/([^/]+)/)?.[1])
+  publicBusiness.value = routeBusinessId
+    ? app.businesses.find((business) => business.id === routeBusinessId) ?? null
+    : null
 
   const persistedSelection = await loadPublicBusinessSelection()
   const validCurrentBusinessId = app.businesses.find((business) => business.id === app.settings.currentBusinessId && business.published)?.id
@@ -118,7 +123,11 @@ async function loadSite() {
     publicMissing.value = false
     if (remoteBusiness.publicSettings) app.settings = { ...app.settings, ...remoteBusiness.publicSettings }
   } else {
-    const fallbackBusiness = publicCurrentBusinessId ? await loadPublicBusiness(publicCurrentBusinessId) : validCurrentBusinessId ? await loadPublicBusiness(validCurrentBusinessId) : null
+    const localRouteBusiness = typeof routeBusinessId === 'string'
+      ? app.businesses.find((business) => business.id === routeBusinessId) ?? null
+      : null
+    const fallbackBusiness = localRouteBusiness
+      ?? (publicCurrentBusinessId ? await loadPublicBusiness(publicCurrentBusinessId) : validCurrentBusinessId ? await loadPublicBusiness(validCurrentBusinessId) : null)
     const finalFallback = fallbackBusiness ?? await loadFirstPublicBusiness()
     publicBusiness.value = finalFallback
     publicMissing.value = !finalFallback
