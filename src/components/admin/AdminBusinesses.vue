@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { ChevronLeft, ChevronRight, Check, Image, Link, Plus, Search, Share2, Trash2 } from 'lucide-vue-next'
 import { useAdminWorkspace } from '../../composables/useAdminWorkspace'
 import { moduleLabels } from '../../data'
@@ -79,6 +79,14 @@ const legalDefaults = { privacy: 'Explica como se usan y protegen los datos que 
 function legalValue(key: keyof typeof legalDefaults) { return current.value.legal?.[key] || legalDefaults[key] }
 function updateLegal(key: keyof typeof legalDefaults, value: string) { update({ legal: { ...legalDefaults, ...current.value.legal, [key]: value } }) }
 function toggleEnglish() { if (!safeCurrentBusiness.value) return; const next = !safeCurrentBusiness.value.englishEnabled; workspaceUpdate({ englishEnabled: next, language: next ? 'en' : 'es' }); editingLanguage.value = next ? 'en' : 'es'; }
+function selectEditingLanguage(language: 'es' | 'en') {
+  if (language === 'en' && !safeCurrentBusiness.value.englishEnabled) toggleEnglish()
+  else workspaceUpdate({ language })
+  editingLanguage.value = language
+}
+watch(editingLanguage, (language) => {
+  if (safeCurrentBusiness.value.language !== language) workspaceUpdate({ language })
+})
 async function saveChanges() {
   try {
     await app.persistBusiness(safeCurrentBusiness.value)

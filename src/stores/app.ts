@@ -217,7 +217,10 @@ export const useAppStore = defineStore('app', () => {
   }
 
   const persistSettings = () => saveWorkspaceSettings(settings.value, profile.value, businesses.value)
-  const persistBusiness = (business: Business) => saveBusiness(business, settings.value)
+  const persistBusiness = (business: Business) => {
+    settings.value.currentBusinessId = business.id
+    return saveBusiness(business, settings.value)
+  }
 
   recalculateMetrics()
 

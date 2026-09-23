@@ -183,6 +183,17 @@ export async function saveBusiness(business: Business, settings: Settings) {
   const currentUser = firebaseAuth.currentUser
   if (!currentUser) return
 
+  const normalizedSettings = normalizeSettings({ ...settings, currentBusinessId: business.id })
+  await setDoc(doc(firestoreDb, 'users', currentUser.uid), stripUndefined({
+    settings: normalizedSettings,
+    updatedAt: serverTimestamp(),
+  }), { merge: true })
+  await setDoc(doc(firestoreDb, 'siteConfig', 'current'), stripUndefined({
+    currentBusinessId: business.id,
+    ownerId: currentUser.uid,
+    updatedAt: serverTimestamp(),
+  }), { merge: true })
+
   await setDoc(
     doc(firestoreDb, 'users', currentUser.uid, 'businesses', business.id),
     stripUndefined(business),
@@ -193,7 +204,7 @@ export async function saveBusiness(business: Business, settings: Settings) {
     stripUndefined({ id: business.id, views: Number(business.views ?? 0), published: business.published, updatedAt: new Date().toISOString() }),
     { merge: true },
   )
-  await syncPublishedBusinesses(normalizeSettings(settings), [business], currentUser.uid)
+  await syncPublishedBusinesses(normalizedSettings, [business], currentUser.uid)
 }
 
 async function syncPublishedBusinesses(settings: Settings, businesses: Business[], ownerId: string) {
