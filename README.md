@@ -1,4 +1,31 @@
 
+# WebUniversal
+
+Plataforma web para crear, publicar y administrar sitios profesionales para negocios y servicios. Cada negocio puede tener su propia identidad, contenido, módulos y formulario de contacto.
+
+## Accesos rápidos
+
+- [Vista cliente](https://byruby12.github.io/WebUniversal/)
+- [Login de administrador](https://byruby12.github.io/WebUniversal/#/login)
+- [Panel de administración](https://byruby12.github.io/WebUniversal/#/admin)
+
+El panel de administración requiere una sesión válida de Firebase. Si no hay una sesión iniciada, redirige al login.
+
+## Registro de cambios
+
+- Mejorada la bandeja de mensajes con tipos de solicitud, datos de contacto, estados, notas internas y gestión visual integrada.
+- Añadido el flujo completo de reseñas: alta pública pendiente de aprobación, publicación, despublicación, borrado y avisos en la campanita.
+- Añadida la colección `publicReviews` y sus reglas de Firestore.
+- Mejorada la galería pública con páginas de seis imágenes, formato uniforme y navegación responsive.
+- Añadida paginación de reseñas públicas y formulario de valoración.
+- Añadido el editor de textos visibles del cliente con traducciones ES/EN y sincronización con `publicBusinesses`.
+- Mejorados los ajustes de formularios, WhatsApp, cookies, idioma, SEO, analítica, mantenimiento e indexación.
+- Añadidas notificaciones de solicitudes y reseñas con papelera independiente, sin borrar los registros reales.
+- Mejoradas Estadísticas, Resumen, el footer público y la navegación responsive.
+- Añadido un toast flotante para confirmar guardados en negocios, ajustes y perfil.
+- Añadido `ruby/script.js` para crear e importar backups JSON entre proyectos Firebase.
+- Añadido `.firebaserc` para fijar el proyecto Firebase correcto y protección de credenciales/backups en `.gitignore`.
+
 ## Respaldo y migracion Firebase
 
 El script `ruby/script.js` permite crear un respaldo del workspace y migrarlo a otro proyecto Firebase con un usuario nuevo. Copia negocios, traducciones, paginas, galeria, solicitudes, reseñas, metricas, ajustes y la copia publica.
@@ -48,9 +75,6 @@ npm run firebase:migrate
 ```
 
 El script crea `ruby/workspace.json` antes de migrar. No exporta contraseñas del usuario origen: la cuenta destino se crea o actualiza con `TARGET_PASSWORD`. No guardes los JSON de cuentas de servicio ni las variables con secretos en Git.
-# WebUniversal
-
-Plataforma web para crear, publicar y administrar sitios profesionales para negocios y servicios. Cada negocio puede tener su propia identidad, contenido, módulos y formulario de contacto.
 
 ## Enlaces
 
