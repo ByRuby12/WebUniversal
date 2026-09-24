@@ -54,3 +54,10 @@
 @media(min-width:621px) and (max-width:900px){
   .modal{width:min(680px,calc(100vw - 36px))}
 }
+
+/* Keep public fixed header clear when opening client forms */
+.public-site:has(.modal-backdrop) .public-header{z-index:60}
+.modal-backdrop{z-index:55;align-items:flex-start;overflow-y:auto;padding:calc(78px + 20px) 20px 20px}
+@media(max-width:620px){
+  .modal-backdrop{padding:calc(65px + 10px) 10px 10px}
+}
